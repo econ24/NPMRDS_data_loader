@@ -1,0 +1,9 @@
+[
+	{"name": "tmc", "type": "string"},
+	{"name": "date", "type": "integer"},
+	{"name": "epoch", "type": "integer"},
+	{"name": "travel_time_all", "type": "integer"},
+	{"name": "travel_time_passenger", "type": "integer"},
+	{"name": "travel_time_truck", "type": "integer"},
+	{"name": "weekday", "type": "string"}
+]

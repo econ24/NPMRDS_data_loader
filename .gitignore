@@ -1,0 +1,6 @@
+*.ini
+*.pyc
+*.p12
+.spyderproject
+*~
+Northeast
