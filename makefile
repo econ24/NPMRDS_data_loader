@@ -8,3 +8,4 @@ clean:
 
 move:
 	@mv formatted* ./Northeast/
+	@mv ~/Downloads/npmrds/tar_files/USA*.tar ~/Downloads/npmrds/tar_files/uploaded
