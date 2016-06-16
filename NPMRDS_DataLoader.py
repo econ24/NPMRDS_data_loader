@@ -127,7 +127,7 @@ def main():
         helpFunc()
         return
         
-    if not len(sys.argv) or sys.argv[1] == "help":
+    if sys.argv[1] == "help":
         helpFunc(sys.argv[2:])
         return
         
@@ -143,7 +143,7 @@ def main():
         return
         
     if action != "load":
-        helpFunc([])
+        helpFunc()
         return
     
     #get parameters
