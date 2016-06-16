@@ -22,18 +22,48 @@ def appendData(bigquery, source, projectId, datasetId, tableId, **kwargs):
         }
     }
     job = bigquery.jobs().insert(projectId=projectId, body=body).execute()
-    
+
     state = job["status"]["state"].lower()
     jobId = job["jobReference"]["jobId"]
-    
+
     while state != "done":
         time.sleep(15)
         job = bigquery.jobs().get(projectId=projectId, jobId=jobId).execute()
         state = job["status"]["state"].lower()
         print "<BigQuery> Job status: %s" % state
-            
+
     print job
-#end appendData
+# end appendData
+
+def insertData(bigquery, source, projectId, datasetId, tableId, **kwargs):
+    body = {
+        "configuration": {
+            "load": {
+                "destinationTable": {
+                    "datasetId": datasetId,
+                    "projectId": projectId,
+                    "tableId": tableId
+                },
+                "skipLeadingRows": 1,
+                "sourceFormat": "CSV",
+                "sourceUris": [source],
+                "writeDisposition": "WRITE_TRUNCATE"
+            }
+        }
+    }
+    job = bigquery.jobs().insert(projectId=projectId, body=body).execute()
+
+    state = job["status"]["state"].lower()
+    jobId = job["jobReference"]["jobId"]
+
+    while state != "done":
+        time.sleep(15)
+        job = bigquery.jobs().get(projectId=projectId, jobId=jobId).execute()
+        state = job["status"]["state"].lower()
+        print "<BigQuery> Job status: %s" % state
+
+    print job
+# end insertData
 
 """
 ###################
@@ -53,46 +83,40 @@ def appendFile(bigquery, source, **kwargs):
             for i in range(len(schema)):
                 record[schema[i]] = data[i]
             records.append(record)
-            
-            if (len(records) >= 25):
-                streamRecords(bigquery, records, 0, **kwargs)
-                
-        if len(records):
-            streamRecords(bigquery, records, **kwargs)
-#end appendFile
-                
-def streamRecords(bigquery, records, attempt, projectId, datasetId, tableId, insertId=None, **kwargs):
-    if attempt == 3:
-        print "could not upload:"
-        for record in records:
-            print record
-        return
-        
-    insertId = insertId or "insertId-"+str(time.time())
-        
+        # end for loop
+
+        count = 0
+        step = 50
+        while count < len(records):
+            streamRecords(bigquery, records[count : count + step], **kwargs)
+            count += step
+# end appendFile
+
+def streamRecords(bigquery, records, projectId, datasetId, tableId, **kwargs):
+
     body = {
         "kind": "bigquery#tableDataInsertAllRequest",
-        "insertId": insertId,
         "rows": []
     }
-    
-    attempts = []
-    
-    while len(records):
-        record = records.pop()
-        body["rows"].append({"json": record})
-        attempts.append(record)
-        
+
+    for record in records:
+        body["rows"].append({ "json": record })
+
     try:
         response = bigquery.tabledata().insertAll(projectId=projectId, datasetId=datasetId, tableId=tableId, body=body).execute()
     except:
-        streamRecords(bigquery, attempts, attempt+1, projectId, datasetId, tableId, insertId)
+        failedRecords(records)
         return
-    
+
     if response.get("insertErrors"):
         errors = []
         for error in response["insertErrors"]:
             index = error["index"]
-            errors.append(attempts[index])
-        streamRecords(bigquery, records, attempt+1, projectId, datasetId, tableId)
+            errors.append(records[index])
+        failedRecords(errors)
 #end streamRecords
+
+def failedRecords(records):
+    print "<BigQuery_Append.streamRecords> Failed to append records..."
+    for record in errors:
+        print record
